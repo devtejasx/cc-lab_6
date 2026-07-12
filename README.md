@@ -86,8 +86,6 @@ cc-lab_6/
 2. Create a Jenkins pipeline job pointing at this repository's `Jenkinsfile`.
 3. Run the pipeline. It executes three stages: **Build Backend Image**, **Deploy Backend Containers**, **Deploy NGINX Load Balancer**.
 
-> **Note:** the `Jenkinsfile` references paths `CC_LAB-6/backend` and `CC_LAB-6/nginx/default.conf` — see [Known Issues](#known-issues--inconsistencies) for what this assumes about the Jenkins workspace layout.
-
 ## Running Manually (without Jenkins)
 
 You can reproduce exactly what the pipeline does, directly with Docker:
@@ -129,14 +127,13 @@ The `Jenkinsfile` itself **is** the CI/CD pipeline for this project — there is
 
 ## Known Issues / Inconsistencies
 
-1. **Path mismatch between `Jenkinsfile` and actual repo layout.** The pipeline references `CC_LAB-6/backend` and `CC_LAB-6/nginx/default.conf`, implying the Jenkins job checks out this repository into a workspace subdirectory literally named `CC_LAB-6`. The actual repository (and its folders) are named `cc-lab_6`/`backend`/`nginx` with no `CC_LAB-6` prefix anywhere. If the Jenkins job's working directory doesn't happen to be named `CC_LAB-6`, both `docker build` and `docker cp` steps in the `Jenkinsfile` will fail with a "no such file or directory" error. Rename the paths in `Jenkinsfile` to match the actual repo structure (`backend`, `nginx/default.conf`) or configure the Jenkins job to check out into a `CC_LAB-6` subdirectory to match.
+1. **(Resolved)** The `Jenkinsfile` previously referenced `CC_LAB-6/backend` and `CC_LAB-6/nginx/default.conf`, which only worked if the Jenkins job checked the repo out into a folder literally named `CC_LAB-6`. The paths are now relative to the repository root (`backend`, `nginx/default.conf`), matching a standard Pipeline-from-SCM checkout.
 2. **No `.gitignore`, no LICENSE file.**
 3. **No automated tests** — this is an infrastructure/ops lab exercise, so manual verification via `curl` (see [Usage Example](#usage-example)) is the intended validation method.
 4. **Backend container has no restart policy** and the C++ server has no graceful shutdown handling — acceptable for a lab exercise, but not production-hardened.
 
 ## Troubleshooting
 
-- **`docker build` fails with "no such file or directory: CC_LAB-6/backend"** — see [Known Issues](#known-issues--inconsistencies) #1; either adjust the path in `Jenkinsfile` or check out the repo into a `CC_LAB-6`-named folder.
 - **`curl http://localhost/` connection refused** — confirm the `nginx-lb` container is running and port 80 isn't already in use on the host.
 - **Load balancer always returns the same backend** — confirm both `backend1` and `backend2` containers are running and on `app-network`, and that `nginx -s reload` was executed after copying in `default.conf`.
 

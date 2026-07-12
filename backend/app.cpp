@@ -42,6 +42,11 @@ int main() {
         int client_fd = accept(server_fd, NULL, NULL);
         if (client_fd < 0) continue;
         
+        // Read (and discard) the request first; answering and closing
+        // before the client finishes sending can reset the connection.
+        char buffer[4096];
+        recv(client_fd, buffer, sizeof(buffer), 0);
+        
         // Simple HTTP response
         std::string response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: text/plain\r\n";
